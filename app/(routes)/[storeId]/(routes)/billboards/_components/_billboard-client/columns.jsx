@@ -1,15 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useParams} from "next/navigation";
 import Link from "next/link";
 import CellActions from "./cell-actions";
 
-export const columns = [
+export const columns = (params) => [
   {
     accessorKey: "label",
     header: "Label",
     cell: ({ row }) => {
-      const params = useParams();
       const billboardId = row.original.id;
       return (
         <Button className="font-semibold" variant="link" asChild>

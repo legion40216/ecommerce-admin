@@ -1,15 +1,14 @@
 "use client"
 import { Button } from '@/components/ui/button';
-import { useParams} from "next/navigation"
 import Link from "next/link";
 import CellActions from './cell-actions';
 
-export const columns = [
+export const columns = (params) => [
   {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => {
-      const params = useParams()
+
       const colorId = row.original.id 
       return (
       <Button
@@ -17,7 +16,7 @@ export const columns = [
       variant="link"
       asChild
       >
-      <Link href={`/${params.storeId}/billboards/${colorId}`}>
+      <Link href={`/${params.storeId}/colors/${colorId}`}>
            {row.getValue("name")}
       </Link>
       </Button> 

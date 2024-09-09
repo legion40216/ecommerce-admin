@@ -2,8 +2,6 @@
 import React from 'react'
 
 import Headings from '@/components/custom-ui/headings'
-import { Separator } from '@/components/ui/separator'
-
 
 import { DataTable } from '@/components/table/data-table'
 import { columns } from './_order-client/columns'
@@ -11,7 +9,7 @@ import { columns } from './_order-client/columns'
 export default function OrderClient({
   data
 }) {
-
+  const params = useParams()
 
   return (
     <div className="space-y-5">
@@ -25,7 +23,7 @@ export default function OrderClient({
         <div className="space-y-3">
           <DataTable
           searchKey={"product"} 
-          columns={columns} 
+          columns={columns(params)} 
           data={data}
           />
         </div>

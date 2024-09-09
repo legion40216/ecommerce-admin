@@ -4,7 +4,7 @@ import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'
 import { Plus } from 'lucide-react'
 
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import React from 'react'
 
 import { columns } from './_categories-client/columns'
@@ -15,6 +15,7 @@ export default function CategoriesClient({
   data
 }) {
   const router = useRouter()
+  const params = useParams()
 
   return (
 <div className="space-y-3">
@@ -32,9 +33,9 @@ export default function CategoriesClient({
 <Separator />
 
   <DataTable
-    searchKey={"name"}
-    columns={columns} 
-    data={data}
+     searchKey={"label"} 
+     columns={columns(params)} 
+     data={data}
   />
 
 <Headings

@@ -1,3 +1,4 @@
+"use client"
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -18,6 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { Button } from "@/components/ui/button";
 
 export default function CellActions({colorId }) {
   const router = useRouter()

@@ -1,16 +1,13 @@
 "use client"
 import { Button } from '@/components/ui/button';
-import { useParams } from "next/navigation"
-i
 import Link from "next/link";
 import CellActions from "./cell-actions";
 
-export const columns = [
+export const columns = (params) => [
   {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => {
-      const params = useParams()
       const sizeId = row.original.id 
       return (
       <Button
@@ -18,7 +15,7 @@ export const columns = [
       variant="link"
       asChild
       >
-      <Link href={`/${params.storeId}/billboards/${sizeId}`}>
+      <Link href={`/${params.storeId}/sizes/${sizeId}`}>
            {row.getValue("name")}
       </Link>
       </Button> 

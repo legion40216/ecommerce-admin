@@ -1,15 +1,13 @@
 "use client"
 import { Button } from '@/components/ui/button';
-import { useParams } from "next/navigation"
 import Link from "next/link";
 import CellActions from "./cell-actions";
 
-export const columns = [
+export const columns = (params) => [
   {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => {
-      const params = useParams()
       const categoryId = row.original.id 
       return (
       <Button

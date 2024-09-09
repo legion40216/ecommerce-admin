@@ -1,29 +1,12 @@
 "use client"
-import { Edit, MoreHorizontal, Trash2 } from "lucide-react"
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-import { useState } from 'react'
 import { Button } from '@/components/ui/button';
-import { useParams, useRouter } from "next/navigation"
-import ConfirmModal from "@/components/modals/confirm-modal";
-import { toast } from "sonner";
-import axios from "axios";
 import Link from "next/link";
 
-export const columns = [
+export const columns = (parmas) = [
   {
     accessorKey: "product",
     header: "Product",
     cell: ({ row }) => {
-      const params = useParams()
       const ProductId = row.original.id 
       return (
       <Button
@@ -31,7 +14,7 @@ export const columns = [
       variant="link"
       asChild
       >
-      <Link href={`/dashboard/${params.storeId}/products/${ProductId}`}>
+      <Link href={`/${params.storeId}/products/${ProductId}`}>
            {row.getValue("product")}
       </Link>
       </Button> 

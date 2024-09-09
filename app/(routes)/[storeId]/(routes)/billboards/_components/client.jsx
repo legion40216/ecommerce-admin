@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { Plus } from 'lucide-react'
 
 import { useRouter } from 'next/navigation';
+import { useParams } from "next/navigation"
 import React from 'react'
 
 import { columns } from './_billboard-client/columns'
@@ -15,7 +16,7 @@ export default function BillboardClient({
   data
 }) {
   const router = useRouter()
-
+  const params = useParams()
   return (
     <div className="space-y-3">
         <div className="flex justify-between items-center">
@@ -33,7 +34,7 @@ export default function BillboardClient({
 
           <DataTable
           searchKey={"label"} 
-          columns={columns} 
+          columns={columns(params)} 
           data={data}
           />
 

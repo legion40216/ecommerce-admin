@@ -1,7 +1,8 @@
+"use client"
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
-
+import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import ConfirmModal from "@/components/modals/confirm-modal";
 import { 
