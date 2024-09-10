@@ -22,7 +22,7 @@ export default function ApiList({
         <ApiAlert 
         title={'GET'}
         variant={'public'}
-        description={`${baseUrl}/${entryName}/${entryIdName}`}
+        description={`${baseUrl}/${entryName}/[${entryIdName}]`}
         />
     </div>
   )

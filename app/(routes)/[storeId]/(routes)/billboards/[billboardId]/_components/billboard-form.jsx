@@ -21,8 +21,6 @@ import { Separator } from "@/components/ui/separator";
 import { Trash } from "lucide-react";
 import ConfirmModal from "@/components/modals/confirm-modal";
 import ImageUpload from "@/components/custom-ui/image-upload";
-import { useOrigin } from "@/hooks/use-orgin";
-import { ApiAlert } from "@/components/custom-ui/api-alert";
 
 const billboardSchema = z.object({
   label: z.string().min(1, { message: "Required" }),
@@ -50,7 +48,6 @@ export default function BillboardForm({ initialData }) {
     ? "Save changes"
     : "Create billboard";
 
-  const orgin = useOrigin()
   const [open, setOpen] = useState(false);
   const params = useParams();
   const router = useRouter();

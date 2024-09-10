@@ -9,8 +9,7 @@ import { columns } from './_order-client/columns'
 export default function OrderClient({
   data
 }) {
-  const params = useParams()
-
+  
   return (
     <div className="space-y-5">
       <div>
@@ -23,7 +22,7 @@ export default function OrderClient({
         <div className="space-y-3">
           <DataTable
           searchKey={"product"} 
-          columns={columns(params)} 
+          columns={columns} 
           data={data}
           />
         </div>

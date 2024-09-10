@@ -1,25 +1,15 @@
 "use client"
-import { Button } from '@/components/ui/button';
-import Link from "next/link";
 
-export const columns = (parmas) = [
+export const columns = [
   {
     accessorKey: "product",
     header: "Product",
-    cell: ({ row }) => {
-      const ProductId = row.original.id 
-      return (
-      <Button
-      className=" font-semibold"
-      variant="link"
-      asChild
-      >
-      <Link href={`/${params.storeId}/products/${ProductId}`}>
-           {row.getValue("product")}
-      </Link>
-      </Button> 
-      )
-    },
+    cell: ({ row }) => 
+      <CellLinks 
+      dataId    = {row.original.id} 
+      dataLabel = {row.getValue("product")} 
+      paramsName = {'products'}
+      /> 
   },
 
   {

@@ -1,27 +1,16 @@
 "use client"
-import { Button } from '@/components/ui/button';
-import Link from "next/link";
 import CellActions from "./cell-actions";
 
-export const columns = (params) = [
+export const columns =  [
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => {
-
-      const productId = row.original.id 
-      return (
-      <Button
-      className=" font-semibold"
-      variant="link"
-      asChild
-      >
-      <Link href={`/${params.storeId}/products/${productId}`}>
-           {row.getValue("name")}
-      </Link>
-      </Button> 
-      )
-    },
+    cell: ({ row }) => 
+      <CellLinks 
+      dataId    = {row.original.id} 
+      dataLabel = {row.getValue("name")} 
+      paramsName = {'products'}
+      /> 
   },
 
   {
@@ -60,6 +49,11 @@ export const columns = (params) = [
   
   {
     id: "actions",
-    cell: ({ row }) => <CellActions productId={row.original.id} />,
+    cell: ({ row }) => <CellActions
+    dataId={row.original.id}
+    paramsName="products"
+    toastName="product"
+    copyBoolean={true} 
+    />,
   },
 ]

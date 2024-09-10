@@ -4,7 +4,7 @@ import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'
 import { Plus } from 'lucide-react'
 
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import React from 'react'
 
 import { DataTable } from '@/components/table/data-table'
@@ -17,8 +17,7 @@ export default function ProductClient({
   data
 }) {
   const router = useRouter()
-  const params = useParams()
-
+  
   return (
     <div className="space-y-3">
         <div className="flex justify-between items-center">
@@ -36,7 +35,7 @@ export default function ProductClient({
 
           <DataTable
             searchKey={"name"}
-            columns={columns(params)} 
+            columns={columns} 
             data={data}
           />
 
@@ -48,7 +47,7 @@ export default function ProductClient({
         <Separator />
 
         <ApiList 
-        entryIdName={'products'}
+        entryIdName={'productId'}
         entryName={'products'}
         />
     </div>

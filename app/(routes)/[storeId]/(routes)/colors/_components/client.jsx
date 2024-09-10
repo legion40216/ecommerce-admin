@@ -1,11 +1,13 @@
 "use client"
+import React from 'react'
+
 import { Button } from '@/components/ui/button'
 import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'
 import { Plus } from 'lucide-react'
 
-import { useParams, useRouter } from 'next/navigation';
-import React from 'react'
+import { useRouter } from 'next/navigation';
+
 
 import { DataTable } from '@/components/table/data-table'
 import { columns } from './_color-component/columns'
@@ -15,8 +17,6 @@ export default function ColorClient({
   data
 }) {
   const router = useRouter()
-  const params = useParams()
-
   return (
     <div className="space-y-3">
         <div className="flex justify-between items-center">
@@ -34,7 +34,7 @@ export default function ColorClient({
 
           <DataTable
             searchKey={"name"}
-            columns={columns(params)} 
+            columns={columns} 
             data={data}
           />
 
@@ -46,7 +46,7 @@ export default function ColorClient({
         <Separator />
 
         <ApiList 
-        entryIdName={'colors'}
+        entryIdName={'colorId'}
         entryName={'colors'}
         />
     </div>

@@ -1,27 +1,18 @@
 "use client"
-import { Button } from '@/components/ui/button';
-import Link from "next/link";
-import CellActions from './cell-actions';
 
-export const columns = (params) => [
+import CellActions from "@/components/table/cell-actions"
+import CellLinks from "@/components/table/cell-links"
+
+export const columns = [
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => {
-
-      const colorId = row.original.id 
-      return (
-      <Button
-      className=" font-semibold"
-      variant="link"
-      asChild
-      >
-      <Link href={`/${params.storeId}/colors/${colorId}`}>
-           {row.getValue("name")}
-      </Link>
-      </Button> 
-      )
-    },
+    cell: ({ row }) => 
+      <CellLinks 
+      dataId    = {row.original.id} 
+      dataLabel = {row.getValue("name")} 
+      paramsName = {'colors'}
+      /> 
   },
 
   {
@@ -45,6 +36,11 @@ export const columns = (params) => [
 
   {
     id: "actions",
-    cell: ({ row }) => <CellActions colorId={row.original.id} />,
+    cell: ({ row }) => <CellActions
+    dataId={row.original.id}
+    paramsName="colors"
+    toastName="color"
+    copyBoolean={true} 
+    />,
   },
 ]

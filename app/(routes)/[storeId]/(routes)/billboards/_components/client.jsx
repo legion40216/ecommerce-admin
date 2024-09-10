@@ -1,12 +1,10 @@
 "use client"
+import React from 'react'
+
 import { Button } from '@/components/ui/button'
 import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'
 import { Plus } from 'lucide-react'
-
-import { useRouter } from 'next/navigation';
-import { useParams } from "next/navigation"
-import React from 'react'
 
 import { columns } from './_billboard-client/columns'
 import { DataTable } from '@/components/table/data-table'
@@ -15,8 +13,7 @@ import ApiList from '@/components/custom-ui/api-list'
 export default function BillboardClient({
   data
 }) {
-  const router = useRouter()
-  const params = useParams()
+
   return (
     <div className="space-y-3">
         <div className="flex justify-between items-center">
@@ -34,7 +31,7 @@ export default function BillboardClient({
 
           <DataTable
           searchKey={"label"} 
-          columns={columns(params)} 
+          columns={columns} 
           data={data}
           />
 
@@ -46,7 +43,7 @@ export default function BillboardClient({
         <Separator />
 
         <ApiList 
-        entryIdName={'billboards'}
+        entryIdName={'billboardId'}
         entryName={'billboards'}
         />
     </div>

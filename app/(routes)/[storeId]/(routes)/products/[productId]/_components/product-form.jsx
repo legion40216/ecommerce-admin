@@ -35,8 +35,6 @@ import { Trash } from 'lucide-react';
 import ImageUpload from '@/components/custom-ui/image-upload';
 import ConfirmModal from '@/components/modals/confirm-modal';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useOrigin } from "@/hooks/use-orgin";
-
 
 const productSchema = z.object({
   name: z.string().min(1),
@@ -81,7 +79,6 @@ export default function ProductForm({
   const toastLoading  = initialData   ? "Updating product"  : "Creating product"
   const action        = initialData   ? "Save changes"      : "Create product"
 
-  const [open, setOpen] = useState(false)
   const params = useParams()
   const router = useRouter()
   const {isSubmitting} = form.formState

@@ -1,22 +1,18 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import CellActions from "./cell-actions";
+import CellActions from "@/components/table/cell-actions";
+import CellLinks from "@/components/table/cell-links";
 
-export const columns = (params) => [
+
+export const columns = [
   {
     accessorKey: "label",
     header: "Label",
-    cell: ({ row }) => {
-      const billboardId = row.original.id;
-      return (
-        <Button className="font-semibold" variant="link" asChild>
-          <Link href={`/${params.storeId}/billboards/${billboardId}`}>
-            {row.getValue("label")}
-          </Link>
-        </Button>
-      );
-    },
+    cell: ({ row }) => 
+    <CellLinks 
+    dataId    = {row.original.id} 
+    dataLabel = {row.getValue("label")} 
+    paramsName = {'billboards'}
+    />
   },
   {
     accessorKey: "createdAt",
@@ -24,6 +20,11 @@ export const columns = (params) => [
   },
   {
     id: "actions",
-    cell: ({ row }) => <CellActions billboardId={row.original.id} />,
+    cell: ({ row }) => <CellActions
+     dataId={row.original.id}
+     paramsName="billboards"
+     toastName="billboard"
+     copyBoolean={true} 
+     />,
   },
 ];

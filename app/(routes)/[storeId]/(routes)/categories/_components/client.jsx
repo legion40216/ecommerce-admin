@@ -4,7 +4,7 @@ import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'
 import { Plus } from 'lucide-react'
 
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import React from 'react'
 
 import { columns } from './_categories-client/columns'
@@ -15,9 +15,8 @@ export default function CategoriesClient({
   data
 }) {
   const router = useRouter()
-  const params = useParams()
 
-  return (
+return (
 <div className="space-y-3">
 <div className="flex justify-between items-center">
 <Headings
@@ -33,8 +32,8 @@ export default function CategoriesClient({
 <Separator />
 
   <DataTable
-     searchKey={"label"} 
-     columns={columns(params)} 
+     searchKey={"name"} 
+     columns={columns} 
      data={data}
   />
 
@@ -46,7 +45,7 @@ discription={"API call for categories"}
 <Separator />
 
 <ApiList 
-entryIdName={'categories'}
+entryIdName={'categoryId'}
 entryName={'categories'}
 />
 </div>
