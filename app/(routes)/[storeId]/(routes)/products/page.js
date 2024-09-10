@@ -22,17 +22,17 @@ export default async function page({params}) {
     }
   });
 
-  const formattedProducts = products.map((item)=>({
-    id:          item.id,
-    name:        item.name,
-    isFeatured:  item.isFeatured,
-    isArchived:  item.isArchived,
-    price:       formatter.format(item.price.toNumber()),
-    category:    item.category.name,
-    size:        item.category.name,
-    color:       item.color.value,
-    createdAt:   format(item.createdAt, "MMMM do, yyyy")
-  }))
+  const formattedProducts = products.map((item) => ({
+    id:         item.id,
+    name:       item.name,
+    isFeatured: item.isFeatured,
+    isArchived: item.isArchived,
+    price:      formatter.format(item.price.toNumber()), // Convert Decimal to number
+    category:   item.category.name,
+    size:       item.size.name, // Corrected field
+    color:      item.color.value,
+    createdAt:  format(item.createdAt, "MMMM do, yyyy") // Format date
+  }));
 
   return (
     <div>

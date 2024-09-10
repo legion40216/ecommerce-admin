@@ -79,6 +79,7 @@ export default function ProductForm({
   const toastLoading  = initialData   ? "Updating product"  : "Creating product"
   const action        = initialData   ? "Save changes"      : "Create product"
 
+  const [open, setOpen] = useState(false)
   const params = useParams()
   const router = useRouter()
   const {isSubmitting} = form.formState

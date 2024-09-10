@@ -1,5 +1,8 @@
 "use client"
-import CellActions from "./cell-actions";
+
+import CellActions from "@/components/table/cell-actions"
+import CellLinks from "@/components/table/cell-links"
+
 
 export const columns =  [
   {
