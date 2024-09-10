@@ -1,5 +1,7 @@
 "use client"
 
+import CellLinks from "@/components/table/cell-links"
+
 export const columns = [
   {
     accessorKey: "product",
