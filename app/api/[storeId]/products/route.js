@@ -67,6 +67,9 @@ export async function GET(request,{params}) {
             },
             include: {
                 images: true,
+                category: true,
+                size: true,
+                color: true,
             },
         });
 
