@@ -37,12 +37,12 @@ import ConfirmModal from '@/components/modals/confirm-modal';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const productSchema = z.object({
-  name: z.string().min(1),
-  images: z.object({ url: z.string() }).array(),
-  price: z.coerce.number().min(1),
-  categoryId: z.string().min(1),
-  colorId: z.string().min(1),
-  sizeId: z.string().min(1),
+  name: z.string().min(1, "Name is required"),
+  images: z.array(z.object({ url: z.string().url("Invalid URL") })).min(1, "At least one image is required"),
+  price: z.coerce.number().min(1, "Price must be greater than 0"),
+  categoryId: z.string().min(1, "Category is required"),
+  colorId: z.string().min(1, "Color is required"),
+  sizeId: z.string().min(1, "Size is required"),
   isFeatured: z.boolean().default(false).optional(),
   isArchived: z.boolean().default(false).optional(),
 });

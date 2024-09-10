@@ -133,6 +133,8 @@ export default function ImageUpload({
     const updatedPreviews = previews.filter((preview) => preview !== url);
     setPreviews(updatedPreviews);
 
+    setIsLoading(true);
+    
     // Remove from Supabase storage
     try {
       const fileName = url.split('/').pop();
@@ -146,6 +148,8 @@ export default function ImageUpload({
       onRemove(url);
     } catch (error) {
       console.error('Error removing image from storage:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -169,6 +173,7 @@ export default function ImageUpload({
                 variant="destructive"
                 size="sm"
                 className="absolute top-2 right-2 z-10"
+                disabled={isLoading}
               >
                 <Trash className="w-4 h-4" />
               </Button>
