@@ -64,7 +64,10 @@ export async function GET(request,{params}) {
         const products = await prisma.product.findMany({
             where: {
                 storeId
-            }
+            },
+            include: {
+                images: true,
+            },
         });
 
         return NextResponse.json(products);

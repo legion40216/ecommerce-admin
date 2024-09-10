@@ -115,6 +115,9 @@ export async function GET(request,{params}) {
             where: {
                 id: productId
             },
+            include: {
+                images: true,
+            },
         });
 
         return NextResponse.json(product);
