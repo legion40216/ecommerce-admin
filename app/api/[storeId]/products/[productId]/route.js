@@ -2,119 +2,90 @@ import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
 
-export async function PATCH(request,{params}) {
+export async function PATCH(request, { params }) {
     try {
-
-        const { userId } = auth(); 
+        const { userId } = auth();
         
         if (!userId) {
             return new NextResponse("Unauthenticated", { status: 401 });
         }
 
         const body = await request.json();
-        const {  
-            name,
-            price,
-            isFeatured,
-            isArchived,
-            categoryId, 
-            colorId,
-            sizeId,
-            images 
-            } = body;
+        const { name, price, isFeatured, isArchived, categoryId, colorId, sizeId, images } = body;
 
-        if ( !name || !price || !categoryId || !colorId || !sizeId || !images ) {
-          return new NextResponse("Missing required fields", { status: 400 });
+        if (!name || !price || !categoryId || !colorId || !sizeId || !images || !params.productId) {
+            return new NextResponse("Missing required fields", { status: 400 });
         }
 
-        if(!params.productId) {
-            return new NextResponse("product is required", { status: 400 });
-        }
+        const product = await prisma.$transaction(async (prisma) => {
+            // Update product
+            const updatedProduct = await prisma.product.update({
+                where: { id: params.productId },
+                data: {
+                    name,
+                    price,
+                    isFeatured,
+                    isArchived,
+                    categoryId,
+                    colorId,
+                    sizeId,
+                },
+            });
 
-        const { productId } = params;
+            // Delete old images
+            await prisma.image.deleteMany({
+                where: { productId: params.productId },
+            });
 
-        await prisma.product.update({
-            where: {
-              id: productId,
-            },
-            data: {
-              name,
-              price,
-              isFeatured,
-              isArchived,
-              categoryId, 
-              colorId,
-              sizeId,
-              images: {
-                deleteMany: {}, // Assuming this is needed to clear old images
-              },
-            },
-          });
+            // Create new images
+            await prisma.image.createMany({
+                data: images.map((image) => ({
+                    url: image.url,
+                    productId: params.productId,
+                })),
+            });
 
-        const product = await prisma.product.update({
-            where: {
-                id: productId,
-            },
-
-            data:{
-                images: {
-                    createMany: {
-                        data: images.map((image) => ({
-                            url: image.url // Extract the URL from each image
-                        }))
-                    }
-                }
-            }
-
-        })
+            return updatedProduct;
+        });
 
         return NextResponse.json(product);
     } catch (error) {
-        console.error('[product_PATCH]', error);
+        console.error('[PRODUCT_PATCH]', error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
 
-export async function DELETE(request,{params}) {
+export async function DELETE(request, { params }) {
     try {
-        const { userId } = auth(); // Correctly call the auth function
+        const { userId } = auth();
 
         if (!userId) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        if(!params.productId) {
-            return new NextResponse("product is required", { status: 400 });
+        if (!params.productId) {
+            return new NextResponse("Product ID is required", { status: 400 });
         }
 
-        const { productId } = params;
-
         const product = await prisma.product.delete({
-            where: {
-                id: productId,
-            },
+            where: { id: params.productId },
         });
 
         return NextResponse.json(product);
-
     } catch (error) {
-        console.error('[product_DELETE]', error)
+        console.error('[PRODUCT_DELETE]', error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
 
-export async function GET(request,{params}) {
+export async function GET(request, { params }) {
     try {
-        if(!params.productId) {
-            return new NextResponse("product is required", { status: 400 });
+        if (!params.productId) {
+            return new NextResponse("Product ID is required", { status: 400 });
         }
 
-        const { productId } = params;
-
         const product = await prisma.product.findUnique({
-            where: {
-                id: productId
-            },
+            where: { id: params.productId },
             include: {
                 images: true,
                 category: true,
@@ -123,10 +94,13 @@ export async function GET(request,{params}) {
             },
         });
 
+        if (!product) {
+            return new NextResponse("Product not found", { status: 404 });
+        }
+
         return NextResponse.json(product);
     } catch (error) {
-         console.error('[product_GET]', error)
+        console.error('[PRODUCT_GET]', error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
-
