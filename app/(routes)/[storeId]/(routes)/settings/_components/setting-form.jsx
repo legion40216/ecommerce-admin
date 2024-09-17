@@ -7,7 +7,7 @@ import axios from 'axios';
 
 import { useForm } from "react-hook-form"
 import { Input } from "@/components/ui/input"
-import { storeSchema } from '@/app/_components/store-form'
+import { storeSchema } from '@/app/(dashboard)/(routes)/_components/store-form'
 import { Button } from '@/components/ui/button'
 import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'

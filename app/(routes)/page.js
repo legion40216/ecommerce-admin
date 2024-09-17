@@ -12,11 +12,7 @@ export default async function page() {
     redirect("/sign-in")
   }
 
-  const store = await prisma.store.findFirst({
-    where: {
-      userId
-    }
-  })
+  const store = await prisma.store.findFirst({})
 
   if(store) {
     redirect(`/${store.id}`)

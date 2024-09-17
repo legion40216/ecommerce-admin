@@ -13,10 +13,10 @@ export default async function page({params}) {
   }
   const store = await prisma.store.findUnique({
     where: {
-        id: params.storeId,
-        userId
+        id: params.storeId
     }
 })
+
 
 if(!store) {
   redirect('/')

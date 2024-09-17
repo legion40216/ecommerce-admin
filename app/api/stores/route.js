@@ -14,7 +14,6 @@ export async function POST(request) {
         const store = await prisma.store.create({
             data: {
                 name: body.name,
-                userId
             }
         });
 

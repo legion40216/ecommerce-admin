@@ -90,7 +90,7 @@ export default function StoreSwitcher({stores}) {
         className="w-[200px] justify-between"
       >
         <StoreIcon className="mr-2 h-4 w-4"/>
-        {currentStore && currentStore ? currentStore.label : "Not found"}
+        {currentStore ? (currentStore.label ? currentStore.label : "Not  found") : "Select store"}
         <ChevronsUpDown className="ml-auto w-4 h-4 shrink-0 opacity-50"/>
       </Button>
     </PopoverTrigger>

@@ -9,10 +9,13 @@ import { Plus } from 'lucide-react'
 import { columns } from './_billboard-client/columns'
 import { DataTable } from '@/components/table/data-table'
 import ApiList from '@/components/custom-ui/api-list'
+import { useRouter } from 'next/navigation'
 
 export default function BillboardClient({
   data
 }) {
+
+  const router = useRouter()
 
   return (
     <div className="space-y-3">

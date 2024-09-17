@@ -1,9 +1,8 @@
 import { Raleway } from 'next/font/google'
-
 import { ClerkProvider } from '@clerk/nextjs'
 import "./globals.css";
 import { Toaster } from '@/components/ui/sonner'
-import Navbar from './_components/navbar';
+
 
 export const metadata = {
   title: "Create Next App",
@@ -18,10 +17,9 @@ export default function RootLayout({ children }) {
       <html lang="en">
         <body className={font.className}>
           <Toaster />
-          <Navbar />
-          <main className="container-full-content">
+          <div className="container-full-content">
             {children}
-          </main>
+          </div>
         </body>
       </html>
      </ClerkProvider>

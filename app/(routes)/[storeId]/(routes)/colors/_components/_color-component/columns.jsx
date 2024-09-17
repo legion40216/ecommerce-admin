@@ -1,5 +1,4 @@
 "use client"
-
 import CellActions from "@/components/table/cell-actions"
 import CellLinks from "@/components/table/cell-links"
 

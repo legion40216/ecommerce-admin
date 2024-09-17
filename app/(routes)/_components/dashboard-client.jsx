@@ -10,7 +10,7 @@ import { Plus } from 'lucide-react'
 
 import Modal from '@/components/modals/modal'
 import { Button } from '@/components/ui/button'
-import StoreForm from '../../_components/store-form';
+import StoreForm from './store-form';
 
 export default function DashboardClient({
 

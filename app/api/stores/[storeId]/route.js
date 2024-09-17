@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function PATCH(request,{params}) {
     try {
-        const { userId } = auth(); // Correctly call the auth function
+        const { userId } = auth(); 
         
         const body = await request.json();
 
@@ -17,7 +17,6 @@ export async function PATCH(request,{params}) {
         const store = await prisma.store.updateMany({
             where: {
                 id: storeId,
-                userId
             },
             
             data: {
@@ -46,7 +45,6 @@ export async function DELETE(request,{params}) {
         const store = await prisma.store.deleteMany({
             where: {
                 id: storeId,
-                userId
             },
         });
 

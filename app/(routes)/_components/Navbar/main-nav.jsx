@@ -8,6 +8,11 @@ export default function MainNav() {
     const pathName = usePathname()
     const params = useParams()
 
+    // If there's no storeId in params, return null (don't render anything)
+    if (!params.storeId) {
+        return null;
+    }
+
     const routes = [
         {
             href: `/${params.storeId}`,
