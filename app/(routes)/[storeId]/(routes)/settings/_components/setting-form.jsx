@@ -7,7 +7,7 @@ import axios from 'axios';
 
 import { useForm } from "react-hook-form"
 import { Input } from "@/components/ui/input"
-import { storeSchema } from '@/app/(dashboard)/(routes)/_components/store-form'
+
 import { Button } from '@/components/ui/button'
 import Headings from '@/components/custom-ui/headings'
 import { Separator } from '@/components/ui/separator'
@@ -24,6 +24,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ConfirmModal from '@/components/modals/confirm-modal';
 import { ApiAlert } from '@/components/custom-ui/api-alert';
 import { useOrigin } from '@/hooks/use-orgin';
+import { storeSchema } from '@/app/(routes)/_components/store-form';
 
 export default function SettingForm({
   store

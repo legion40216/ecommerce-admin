@@ -11,9 +11,9 @@ export async function PATCH(request, { params }) {
         }
 
         const body = await request.json();
-        const { name, price, isFeatured, isArchived, categoryId, colorId, sizeId, images } = body;
+        const { name, price, isFeatured, isArchived, categoryId, colorId, sizeId, images, location, quantity } = body;
 
-        if (!name || !price || !categoryId || !colorId || !sizeId || !images || !params.productId) {
+        if (!name || !price || !categoryId || !colorId || !sizeId || !images || !params.productId || !location || !quantity) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
 
@@ -29,6 +29,8 @@ export async function PATCH(request, { params }) {
                     categoryId,
                     colorId,
                     sizeId,
+                    location,
+                    quantity
                 },
             });
 

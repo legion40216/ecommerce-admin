@@ -102,6 +102,8 @@ model Product {
   category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
   name       String
   price      Decimal
+  quantity   Int      @default(0)
+  location   String?
   isFeatured Boolean  @default(false)
   isArchived Boolean  @default(false)
   sizeId     String
@@ -135,12 +137,13 @@ model Order {
   phone          String
   address        String
   city           String
-  country        String
-  postalCode     String
-  totalPrice     Decimal
-  paymentMethod  String
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  country         String
+  postalCode      String
+  totalPrice      Decimal
+  paymentMethod     String      // 'cod' or 'stripe'
+  paymentIntentId   String?    // For Stripe payments
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 }
 
 model OrderItem {
@@ -149,6 +152,6 @@ model OrderItem {
   order      Order    @relation(fields: [orderId], references: [id])
   productId  String
   product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int
+  count      Int      @default(0)      
   price      Decimal
 }

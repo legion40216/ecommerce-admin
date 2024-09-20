@@ -1,48 +1,49 @@
 "use client"
-import {useState} from 'react'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-
-import { toast } from 'sonner';
-import axios from 'axios';
-
 import { useForm } from "react-hook-form"
+import { z } from 'zod';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { useParams, useRouter } from 'next/navigation';
+
 import { Input } from "@/components/ui/input"
 import { Button } from '@/components/ui/button'
-
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-  } from "@/components/ui/form"
-
-  import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select"
-  
-import { useParams, useRouter } from 'next/navigation';
-import { z } from 'zod';
-import Headings from '@/components/custom-ui/headings';
-import { Separator } from '@/components/ui/separator';
-import { Trash } from 'lucide-react';
-import ImageUpload from '@/components/custom-ui/image-upload';
-import ConfirmModal from '@/components/modals/confirm-modal';
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Checkbox } from '@/components/ui/checkbox';
+
+// Import a list of countries
+import { countries } from '@/lib/countries';
+import Headings from '@/components/custom-ui/headings';
+import ConfirmModal from '@/components/modals/confirm-modal';
+import { Trash } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import ImageUpload from '@/components/custom-ui/image-upload';
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   images: z.array(z.object({ url: z.string().url("Invalid URL") })).min(1, "At least one image is required"),
   price: z.coerce.number().min(1, "Price must be greater than 0"),
+  quantity: z.coerce.number().min(0, "Quantity must be 0 or greater"),
   categoryId: z.string().min(1, "Category is required"),
   colorId: z.string().min(1, "Color is required"),
   sizeId: z.string().min(1, "Size is required"),
+  location: z.string().min(1, "Location is required"),
   isFeatured: z.boolean().default(false).optional(),
   isArchived: z.boolean().default(false).optional(),
 });
@@ -53,24 +54,26 @@ export default function ProductForm({
   colors,
   initialData,
 }) {
-    
   const form = useForm({
     resolver: zodResolver(productSchema),
     defaultValues: initialData
-    ? {
-        ...initialData,
-        price: parseFloat(String(initialData?.price)) // Convert Decimal to number
-      }
-    : {
-        name: '',
-        images: [],
-        price: 0,
-        categoryId: '',
-        colorId: '',
-        sizeId: '',
-        isFeatured: false,
-        isArchived: false,
-      }
+      ? {
+          ...initialData,
+          price: parseFloat(String(initialData?.price)),
+          quantity: initialData?.quantity || 0,
+        }
+      : {
+          name: '',
+          images: [],
+          price: 0,
+          quantity: 0,
+          categoryId: '',
+          colorId: '',
+          sizeId: '',
+          location: '',
+          isFeatured: false,
+          isArchived: false,
+        }
   });
 
   const title         = initialData   ? "Edit product"      : "Create product"
@@ -229,7 +232,57 @@ const onDelete = async () => {
               }
               />
               </div>
+                <div className="max-w-[400px]">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        placeholder="Product quantity"
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
+            <div className="max-w-[400px]">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <Select
+                      disabled={isSubmitting}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a country" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
               <div className=" max-w-[400px]">
                 <FormField
                 control = {form.control}

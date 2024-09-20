@@ -11,11 +11,12 @@ export async function POST(request, { params }) {
         }
 
         const body = await request.json();
-        const { name, price, isFeatured, isArchived, categoryId, colorId, sizeId, images } = body;
+        const { name, price, isFeatured, isArchived, categoryId, colorId, sizeId, images, location, quantity } = body;
 
-        if (!name || !price || !categoryId || !colorId || !sizeId || !images || !params.storeId) {
+        if (!name || !price || !categoryId || !colorId || !sizeId || !images || !params.productId || !location || !quantity) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
+
 
         const product = await prisma.product.create({
             data: {
@@ -27,6 +28,8 @@ export async function POST(request, { params }) {
                 colorId,
                 sizeId,
                 storeId: params.storeId,
+                location,
+                quantity,
                 images: {
                     createMany: {
                         data: images.map((image) => ({ url: image.url }))
@@ -73,9 +76,24 @@ export async function GET(request, { params }) {
             },
         });
 
-        return NextResponse.json(products);
+        // Set CORS headers
+        const response = NextResponse.json(products);
+        response.headers.set('Access-Control-Allow-Origin', '*'); // Or specify allowed origins
+        response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+        return response;
     } catch (error) {
         console.error('[PRODUCTS_GET]', error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+    const response = new NextResponse(null, { status: 204 });
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    return response;
+} 

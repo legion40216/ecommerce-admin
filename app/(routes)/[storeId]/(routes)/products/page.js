@@ -1,13 +1,10 @@
-import React from 'react'
+import React from 'react';
 import prisma from '@/lib/prismadb';
-
-
 import { format } from 'date-fns';
 import { formatter } from '@/lib/utils';
 import ProductClient from './_components/client';
 
-export default async function page({params}) {
-
+export default async function page({ params }) {
   const products = await prisma.product.findMany({
     where: {
       storeId: params.storeId
@@ -23,23 +20,22 @@ export default async function page({params}) {
   });
 
   const formattedProducts = products.map((item) => ({
-    id:         item.id,
-    name:       item.name,
-    isFeatured: item.isFeatured,
-    isArchived: item.isArchived,
-    price:      formatter.format(item.price.toNumber()), // Convert Decimal to number
-    category:   item.category.name,
-    size:       item.size.name, // Corrected field
-    color:      item.color.value,
-    createdAt:  format(item.createdAt, "MMMM do, yyyy") // Format date
+    id:             item.id,
+    name:           item.name,
+    isFeatured:     item.isFeatured,
+    isArchived:     item.isArchived,
+    price:          formatter.format(item.price.toNumber()),
+    quantity:       item.quantity,
+    location:       item.location,
+    category:       item.category.name,
+    size:           item.size.name,
+    color:          item.color.value,
+    createdAt:      format(item.createdAt, "MMMM do, yyyy")
   }));
 
   return (
     <div>
-        <ProductClient
-        data={formattedProducts}
-        />
+      <ProductClient data={formattedProducts} />
     </div>
-    
-  )
+  );
 }

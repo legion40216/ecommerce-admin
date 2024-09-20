@@ -37,6 +37,14 @@ export const columns =  [
     header: "Size",
   },
   {
+    accessorKey: "quantity",
+    header: "Quantity",
+  },
+  {
+    accessorKey: "location",
+    header: "Location",
+  },
+  {
     accessorKey: "color",
     header: "Color",
     cell: ({ row }) => (
