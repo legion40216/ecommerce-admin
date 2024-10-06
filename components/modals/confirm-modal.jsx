@@ -31,7 +31,11 @@ export default function ConfirmModal({
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel onClick={()=>{setOpen(false)}}>Cancel</AlertDialogCancel>
-      <AlertDialogAction onClick={onConfirm}>Continue</AlertDialogAction>
+      <AlertDialogAction 
+      onClick={onConfirm}
+      >
+        Continue
+      </AlertDialogAction>
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>

@@ -14,7 +14,7 @@ import { getTotalRevenue } from '@/app/actions/get-total-revenue';
 import { getSalesCount } from '@/app/actions/get-sales-count';
 import { getStockCount } from '@/app/actions/get-stock-count';
 import { getRevenueData } from '@/app/actions/get-revenue-data';
-import Overview from '../_components/overview';
+import Overview from './components/overview';
 
 export default async function page({params}) {
     const totalRevenue = await getTotalRevenue(params.storeId)

@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
-
 import { useParams, useRouter } from "next/navigation";
 import ConfirmModal from "@/components/modals/confirm-modal";
 import { 
@@ -43,7 +42,6 @@ export default function CellActions({
       await axios.delete(`/api/${params.storeId}/${paramsName}/${dataId}`);
       toast.success(`${toastName.toUpperCase()} deleted`);
       router.refresh();
-      setOpen(false);
     } catch (error) {
       if (error.response && error.response.data) {
         toast.error(error.response.data);
@@ -51,13 +49,18 @@ export default function CellActions({
         toast.error("Server Error: Unable to process the request");
       }
     } finally {
-      toast.dismiss(toastId); // Dismiss loading toast in one place
+      toast.dismiss(toastId); 
+      setOpen(false);
     }
   };
   
   return (
     <>
-    <ConfirmModal onConfirm={onDelete} open={open} setOpen={setOpen} />
+    <ConfirmModal 
+    onConfirm={onDelete} 
+    open={open} 
+    setOpen={setOpen} 
+    />
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0">

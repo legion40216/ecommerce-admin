@@ -11,7 +11,7 @@ export async function PATCH(request, { params }) {
     }
 
     const body = await request.json();
-    console.log(body)
+    
     const { isPaid } = body;
 
     if (typeof isPaid !== 'boolean') {

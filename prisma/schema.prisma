@@ -4,6 +4,7 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -40,6 +41,14 @@ model Store {
 
   Product Product[] @relation("StoreToProduct")
   Order   Order[]   @relation("StoreToOrder")
+
+  Luster Luster[] @relation("StoreToLuster")
+
+  Cut Cut[] @relation("StoreToCut")
+
+  Clarity Clarity[] @relation("StoreToClarity")
+
+  Shape Shape[] @relation("StoreToShape")
 }
 
 model Billboard {
@@ -94,27 +103,102 @@ model Color {
   Product Product[]
 }
 
-model Product {
-  id         String   @id @default(uuid())
-  storeId    String
-  store      Store    @relation("StoreToProduct", fields: [storeId], references: [id])
-  categoryId String
-  category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
-  name       String
-  price      Decimal
-  quantity   Int      @default(0)
-  location   String?
-  isFeatured Boolean  @default(false)
-  isArchived Boolean  @default(false)
-  sizeId     String
-  size       Size     @relation(fields: [sizeId], references: [id])
-  colorId    String
-  color      Color    @relation(fields: [colorId], references: [id])
-  images     Image[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
 
-  OrderItem OrderItem[]
+model Zodiac {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id              String    @id @default(uuid())
+  storeId         String
+  store           Store     @relation("StoreToProduct", fields: [storeId], references: [id])
+  categoryId      String
+  category        Category  @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  name            String
+  price           Decimal
+  quantity        Int       @default(0)
+  location        String?   // Country of origin
+  isFeatured      Boolean   @default(false)
+  isArchived      Boolean   @default(false)
+  sizeId          String
+  size            Size      @relation(fields: [sizeId], references: [id])
+  colorId         String
+  color           Color     @relation(fields: [colorId], references: [id])
+  images          Image[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Gemstone-specific fields
+  weight          Float     // Required
+  shapeId         String
+  shape           Shape     @relation(fields: [shapeId], references: [id])
+  clarityId       String?
+  clarity         Clarity?  @relation(fields: [clarityId], references: [id])
+  cutId           String?
+  cut             Cut?      @relation(fields: [cutId], references: [id])
+  length          Float?    // in millimeters
+  width           Float?    // in millimeters
+  depth           Float?    // in millimeters
+  lusterId        String?
+  luster          Luster?   @relation(fields: [lusterId], references: [id])
+
+  // Additional fields
+  treatment       String?
+  certification   String?
+  origin          String?   // Specific origin (e.g., mine name)
+  rarityFactor    String?
+  inclusions      String?
+  fluorescence    String?
+
+  zodiacId  String?
+  zodiac    Zodiac?   @relation(fields: [zodiacId], references: [id])
+
+  OrderItem       OrderItem[]
+}
+
+
+model Shape {
+  id        String    @id @default(uuid())
+  storeId   String
+  store     Store     @relation("StoreToShape", fields: [storeId], references: [id])
+  name      String    @unique 
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Clarity {
+  id        String    @id @default(uuid())
+  storeId   String
+  store     Store     @relation("StoreToClarity", fields: [storeId], references: [id])
+  grade     String    @unique 
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Cut {
+  id        String    @id @default(uuid())
+  storeId   String
+  store     Store     @relation("StoreToCut", fields: [storeId], references: [id])
+  grade     String    @unique 
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Luster {
+  id        String    @id @default(uuid())
+  storeId   String
+  store     Store     @relation("StoreToLuster", fields: [storeId], references: [id])
+  type      String    @unique 
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Image {
@@ -127,21 +211,21 @@ model Image {
 }
 
 model Order {
-  id             String      @id @default(uuid())
-  storeId        String
-  store          Store       @relation("StoreToOrder", fields: [storeId], references: [id])
-  orderItems     OrderItem[]
-  isPaid         Boolean     @default(false)
-  customerName   String
-  email          String
-  phone          String
-  address        String
-  city           String
-  country         String
-  postalCode      String
-  totalPrice      Decimal
-  paymentMethod     String      // 'cod' or 'stripe'
-  paymentIntentId   String?    // For Stripe payments
+  id                String      @id @default(uuid())
+  storeId           String
+  store             Store       @relation("StoreToOrder", fields: [storeId], references: [id])
+  orderItems        OrderItem[]
+  isPaid            Boolean     @default(false)
+  customerName      String
+  email             String
+  phone             String
+  address           String
+  city              String
+  country           String
+  postalCode        String
+  totalPrice        Decimal
+  paymentMethod     String      
+  paymentIntentId   String?   
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 }

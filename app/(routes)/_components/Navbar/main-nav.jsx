@@ -54,6 +54,26 @@ export default function MainNav() {
             label: 'Orders',
             active: pathName === `/${params.storeId}/orders`
         },
+        {
+            href: `/${params.storeId}/shapes`,
+            label: 'Shapes',
+            active: pathName === `/${params.storeId}/shapes`
+        },
+        {
+            href: `/${params.storeId}/cuts`,
+            label: 'Cuts',
+            active: pathName === `/${params.storeId}/cuts`
+        },
+        {
+            href: `/${params.storeId}/lusters`,
+            label: 'Lusters',
+            active: pathName === `/${params.storeId}/lusters`
+        },
+        {
+            href: `/${params.storeId}/clarities`,
+            label: 'Clarities',
+            active: pathName === `/${params.storeId}/clarities`
+        },
     ]
 
     return (
