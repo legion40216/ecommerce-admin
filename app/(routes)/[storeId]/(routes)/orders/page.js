@@ -2,7 +2,7 @@ import React from 'react'
 import prisma from '@/lib/prismadb';
 import { format } from 'date-fns';
 import { formatter } from '@/lib/utils';
-import OrderClient from './_components/client';
+import OrderClient from './components/client';
 
 export default async function page({params}) {
   const orders = await prisma.order.findMany({

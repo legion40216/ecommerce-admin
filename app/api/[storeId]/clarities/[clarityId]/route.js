@@ -1,102 +1,166 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const claritySchema = z.object({
-  grade: z.string().min(1, { message: "Grade is required" }),
-});
-
-export async function GET(request, { params }) {
-  try {
-    if (!params.storeId || !params.clarityId) {
-      return new NextResponse("Store and Clarity IDs are required", { status: 400 });
-    }
-
-    const { storeId, clarityId } = params;
-
-    const clarity = await prisma.clarity.findFirst({
-      where: {
-        id: clarityId,
-        storeId,
-      },
-    });
-
-    if (!clarity) {
-      return new NextResponse("Clarity not found", { status: 404 });
-    }
-
-    return NextResponse.json(clarity);
-  } catch (error) {
-    console.error('[clarity_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
-}
+import { Prisma } from '@prisma/client';
+import { claritySchema } from '@/lib/validators';
 
 export async function PATCH(request, { params }) {
   try {
-    const { userId } = auth();
+      // Authenticate user
+      const { userId } = auth(); 
+      if (!userId) {
+          return NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 401 }
+          );
+      }
 
-    if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
-    }
+      // 2. Extract and validate parameters
+      const { storeId, clarityId } = params;
+      if (!storeId || !clarityId) {
+        return NextResponse.json(
+          { error: "Store ID and Clarity ID are required" },
+          { status: 400 }
+        );
+      }
 
-    if (!params.storeId || !params.clarityId) {
-      return new NextResponse("Store and Clarity IDs are required", { status: 400 });
-    }
-
-    const body = await request.json();
-    const parseResult = claritySchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
-
-    const { grade } = parseResult.data;
-    const { storeId, clarityId } = params;
-
-    // Ensure the store exists
+    // 3. Verify store ownership
     const store = await prisma.store.findUnique({
-      where: { id: storeId },
+      where: {
+        id: storeId,
+        userId,
+      },
     });
-
     if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+      );
     }
+
+    // 4. Validate request body
+    const body = await request.json();
+    const validatedFields = claritySchema.safeParse(body);
+    if (!validatedFields.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validatedFields.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Extract data
+    const { grade } = validatedFields.data;
 
     // Update the clarity grade
-    const clarity = await prisma.clarity.updateMany({
+    const clarity = await prisma.clarity.update({
       where: {
         id: clarityId,
-        storeId,
+        storeId: store.id,
       },
       data: { grade },
     });
 
-    if (clarity.count === 0) {
-      return new NextResponse("Clarity not found or not authorized", { status: 404 });
-    }
+    return NextResponse.json(
+      { success: true, clarity },
+      { status: 200 }
+    );
 
-    return NextResponse.json(clarity);
   } catch (error) {
     console.error('[clarity_PATCH]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    // Handle not found error
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: "Clarity not found" },
+          { status: 404 }
+        );
+      }
+    }
+    return NextResponse.json(
+        { error: "An unexpected error occurred" },
+        { status: 500 }
+      );
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    const { userId } = auth();
-
+    // Authenticate user
+    const { userId } = auth(); 
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+        return NextResponse.json(
+        { error: "Unauthorized" }, 
+        { status: 401 }
+        );
     }
 
-    if (!params.storeId || !params.clarityId) {
-      return new NextResponse("Store and Clarity IDs are required", { status: 400 });
-    }
-
+    // 2. Parameter validation
     const { storeId, clarityId } = params;
+    if (!storeId || !clarityId) {
+      return NextResponse.json(
+        { error: "Store ID and ClarityId ID are required" },
+        { status: 400 }
+      );
+    }
+
+    // 3. Verify store ownership
+    const store = await prisma.store.findUnique({
+      where: {
+        id: storeId,
+        userId,
+      },
+    });
+    if (!store) {
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+    );
+    }
+
+    // Delete the clarity
+    const clarity =await prisma.clarity.delete({
+      where: { 
+        id: clarityId, 
+        storeId: store.id,
+      },
+    });
+
+    return NextResponse.json(
+      { success: true, clarity },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error('[clarity_DELETE]', error);
+if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return NextResponse.json(
+            { error: "Clarity not found within this store." },
+            { status: 404 }
+          );
+        }
+      }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function GET(request, { params }) {
+  try {
+    // 1. Parameter validation
+    const { storeId, clarityId } = params;
+    if (!storeId || !clarityId) {
+      return NextResponse.json(
+        { error: "Store ID and Clarity ID are required" },
+        { status: 400 }
+      );
+    }
 
     // Ensure the clarity belongs to the store
     const clarity = await prisma.clarity.findFirst({
@@ -105,19 +169,27 @@ export async function DELETE(request, { params }) {
         storeId,
       },
     });
-
+    
+ // 3. Handle not found
     if (!clarity) {
-      return new NextResponse("Clarity not found", { status: 404 });
+        return NextResponse.json (
+          { error: "Clarity not found" },
+          { status: 404 }
+      )
     }
 
-    // Delete the clarity
-    await prisma.clarity.delete({
-      where: { id: clarityId },
-    });
+    return NextResponse.json(
+      clarity ,
+      { status: 200 }
+  );
 
-    return NextResponse.json({ message: "Clarity deleted successfully" });
   } catch (error) {
-    console.error('[clarity_DELETE]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[clarity_GET]', error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
+
+

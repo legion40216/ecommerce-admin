@@ -1,6 +1,6 @@
 import React from 'react'
 import prisma from '@/lib/prismadb';
-import BillboardForm from './_components/billboard-form';
+import BillboardForm from './components/billboard-form';
 
 
 export default async function page({params}) {

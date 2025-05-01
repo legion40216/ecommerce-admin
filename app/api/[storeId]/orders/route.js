@@ -52,42 +52,65 @@ export async function POST(request, { params }) {
         postalCode
       });
     } catch (validationError) {
-      return new NextResponse(JSON.stringify({ error: validationError.errors }), { 
-        status: 400,
-        headers: corsHeaders 
-      });
+      return NextResponse.json(
+        { error: validationError.errors },
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      );
     }
     
     // Validate other required fields
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return new NextResponse(JSON.stringify({ error: "Items are required" }), { 
-        status: 400,
-        headers: corsHeaders 
-      });
+      return NextResponse.json(
+        { error: "Items are required" },
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      );
     }
     
     if (typeof totalPrice !== 'number' || totalPrice <= 0) {
-      return new NextResponse(JSON.stringify({ error: "Valid total price is required" }), { 
-        status: 400,
-        headers: corsHeaders 
-      });
+      return NextResponse.json(
+        { error: "Valid total price is required" },
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      );
     }
     
     if (!paymentMethod) {
-      return new NextResponse(JSON.stringify({ error: "Payment method is required" }), { 
-        status: 400,
-        headers: corsHeaders 
-      });
+      return NextResponse.json(
+        { error: "Payment method is required" },
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      );
     }
     
-    if (!params.storeId) {
-      return new NextResponse(JSON.stringify({ error: "Store ID is required" }), { 
-        status: 400,
-        headers: corsHeaders 
-      });
-    }
-    
+    // Extract and validate storeId 
     const { storeId } = params;
+    if(!storeId) {
+        return NextResponse.json(
+            { error: "Store and Order ID is required" },
+            { status: 400 }
+        );
+    }
+
+    // Ensure the store exists
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      });
+      if (!store) {
+        return NextResponse.json(
+          { error: "Store not found" },
+          { status: 400 }
+      );
+      }
 
     let orderData = {
       customerName,
@@ -139,9 +162,12 @@ export async function POST(request, { params }) {
 
   } catch (error) {
     console.error('[ORDER_POST]', error);
-    return new NextResponse(JSON.stringify({ error: "Internal server error" }), { 
-      status: 500,
-      headers: corsHeaders 
-    });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      {
+        status: 500,
+        headers: corsHeaders 
+      }
+    );
   }
 }

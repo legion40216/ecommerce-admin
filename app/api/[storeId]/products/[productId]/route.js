@@ -1,118 +1,256 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
+import { productSchema } from '@/lib/validators';
 
 export async function PATCH(request, { params }) {
     try {
-        // Authenticate the user
-        const { userId } = auth();
+      // Authenticate user
+      const { userId } = auth();
+      if (!userId) {
+        return NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 401 }
+        );
+      }
 
-        if (!userId) {
-            return new NextResponse("Unauthenticated", { status: 401 });
-        }
+      // 2. Extract and validate parameters
+      const { storeId, productId } = params;
+      if (!storeId || !productId) {
+        return NextResponse.json(
+          { error: "Missing parameters" },
+          { status: 400 }
+        );
+      }
 
-        // Parse the request body
-        const body = await request.json();
-        const {
-            name, price, isFeatured, isArchived, categoryId, colorId, sizeId, images, location, quantity,
-            weight, shapeId, clarityId, cutId, length, width, depth, lusterId,
-            treatment, certification, origin, rarityFactor, inclusions, fluorescence,
-            zodiacId 
-        } = body;
+      // 4. Verify store ownership
+      const store = await prisma.store.findUnique({
+        where: {
+          id: storeId,
+          userId, // Ensure store belongs to authenticated user
+        },
+      });
+      if (!store) {
+        return NextResponse.json(
+          { error: "Store not found" }, 
+          { status: 404 }
+        );
+      }
 
-        if (!name || !price || !categoryId || !colorId || !sizeId || !images || !params.productId || !location || !weight || !shapeId) {
-            return new NextResponse("Missing required fields", { status: 400 });
-        }
+      //Validate data and parse data
+      const body = await request.json();
+      const validatedFields = productSchema.safeParse(body);
+      if (!validatedFields.success) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: validatedFields.error.flatten().fieldErrors,
+          },
+          { status: 400 }
+        );
+      }
 
-        // Perform a transaction to update the product and handle images
-        const product = await prisma.$transaction(async (prisma) => {
-  
-            const updatedProduct = await prisma.product.update({
-                where: { id: params.productId },
-                data: {
-                    name,
-                    price,
-                    isFeatured,
-                    isArchived,
-                    categoryId,
-                    colorId,
-                    sizeId,
-                    location,
-                    quantity,
-                    weight,
-                    shapeId,
-                    clarityId,
-                    cutId,
-                    length,
-                    width,
-                    depth,
-                    lusterId,
-                    treatment,
-                    certification,
-                    origin,
-                    rarityFactor,
-                    inclusions,
-                    fluorescence,
-                    zodiacId
-                },
-            });
+      // Extract data
+      const {
+        name,
+        price,
+        isFeatured,
+        isArchived,
+        categoryId,
+        colorId,
+        sizeId,
+        images,
+        location,
+        quantity,
+        weight,
+        shapeId,
+        clarityId,
+        cutId,
+        length,
+        width,
+        depth,
+        lusterId,
+        treatment,
+        certification,
+        origin,
+        rarityFactor,
+        inclusions,
+        fluorescence,
+        zodiacId,
+      } = validatedFields.data;
 
-            // Delete existing images associated with the product
-            await prisma.image.deleteMany({
-                where: { productId: params.productId },
-            });
-
-            // Create new images
-            await prisma.image.createMany({
-                data: images.map((image) => ({
-                    url: image.url,
-                    productId: params.productId,
-                })),
-            });
-
-            return updatedProduct;
+      // Perform a transaction to update the product and handle images
+      const product = await prisma.$transaction(async (prisma) => {
+        const updatedProduct = await prisma.product.update({
+          where: { 
+            id: productId,
+            storeId: store.id  
+          },
+          data: {
+            name,
+            price,
+            isFeatured,
+            isArchived,
+            categoryId,
+            colorId,
+            sizeId,
+            location,
+            quantity,
+            weight,
+            shapeId,
+            clarityId,
+            cutId,
+            length,
+            width,
+            depth,
+            lusterId,
+            treatment,
+            certification,
+            origin,
+            rarityFactor,
+            inclusions,
+            fluorescence,
+            zodiacId,
+          },
         });
 
-        // Return the updated product as a JSON response
-        return NextResponse.json(product);
+        // Delete existing images associated with the product
+        await prisma.image.deleteMany({
+          where: { productId: params.productId },
+        });
+
+        // Create new images
+        await prisma.image.createMany({
+          data: images.map((image) => ({
+            url: image.url,
+            productId: params.productId,
+          })),
+        });
+
+        return updatedProduct;
+      });
+
+      return NextResponse.json(
+        { success: true, product }, 
+        { status: 200 }
+      );
     } catch (error) {
-        console.error('[PRODUCT_PATCH]', error);
-        return new NextResponse("Internal Error", { status: 500 });
-    }
+    console.error('[PRODUCT_PATCH]', error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          return NextResponse.json(
+            { error: "Product not found" },
+            { status: 404 }
+          );
+        }
+      }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
 }
 
 
 export async function DELETE(request, { params }) {
     try {
-        const { userId } = auth();
+      // Authenticate user
+      const { userId } = auth(); 
+      if (!userId) {
+          return NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 401 }
+          );
+      }
 
-        if (!userId) {
-            return new NextResponse("Unauthorized", { status: 401 });
+        // Extract and validate productId 
+        const { productId } = params;
+        if(!productId) {
+            return NextResponse.json(
+                { error: "Product is required" },
+                { status: 400 }
+            );
         }
 
-        if (!params.productId) {
-            return new NextResponse("Product ID is required", { status: 400 });
+        // Extract and validate storeId
+        const { storeId } = params;
+        if (!storeId) {
+            return NextResponse.json(
+            { error: "Store is required" }, 
+            { status: 400 }
+            );
         }
 
+      // 4. Verify store ownership
+      const store = await prisma.store.findUnique({
+        where: {
+          id: storeId,
+          userId, // Ensure store belongs to authenticated user
+        },
+      });
+      if (!store) {
+        return NextResponse.json(
+          { error: "Store not found" }, 
+          { status: 404 }
+        );
+      }
+
+        // Then delete the product
         const product = await prisma.product.delete({
-            where: { id: params.productId },
+            where: { 
+              id: productId,
+              storeId: store.id  
+            },
         });
 
-        return NextResponse.json(product);
+        return NextResponse.json(
+            { success: true, product }, 
+            { status: 200 }
+          );
     } catch (error) {
         console.error('[PRODUCT_DELETE]', error);
-        return new NextResponse("Internal Error", { status: 500 });
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+              if (error.code === 'P2025') {
+                return NextResponse.json(
+                  { error: "Product not found within this store." },
+                  { status: 404 }
+                );
+              }
+            }
+        return NextResponse.json(
+            { error: "An unexpected error occurred" },
+            { status: 500 }
+          );
     }
 }
 
 export async function GET(request, { params }) {
     try {
-        if (!params.productId) {
-            return new NextResponse("Product ID is required", { status: 400 });
+
+        // Extract and validate params
+        const { productId } = params;
+        if (!productId) {
+        return NextResponse.json(
+            { error: "Product ID is required" },
+            { status: 400 }
+        );
         }
 
-        const product = await prisma.product.findUnique({
-            where: { id: params.productId },
+        // Extract and validate storeId 
+        const { storeId } = params;
+        if(!storeId) {
+        return NextResponse.json(
+            { error: "Store is required" },
+            { status: 400 }
+        );
+        }
+
+        const product = await prisma.product.findFirst({
+            where: { 
+              id: productId,
+              storeId: storeId,
+            },
             include: {
                 images: true,
                 category: true,
@@ -126,13 +264,25 @@ export async function GET(request, { params }) {
             },
         });
 
+        // Check if product exists
         if (!product) {
-            return new NextResponse("Product not found", { status: 404 });
+            return NextResponse.json(
+            { error: "Product not found" },
+            { status: 404 }
+            );
         }
 
-        return NextResponse.json(product);
+        // Return the product
+        return NextResponse.json(
+            product, 
+            { status: 200 }
+        );
+
     } catch (error) {
         console.error('[PRODUCT_GET]', error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json(
+            { error: "An unexpected error occurred" },
+            { status: 500 }
+          );
     }
 }

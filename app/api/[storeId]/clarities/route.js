@@ -1,75 +1,110 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const claritySchema = z.object({
-  grade: z.string().min(1, { message: "Grade is required" }),
-});
+import { claritySchema } from '@/lib/validators';
 
 export async function POST(request, { params }) {
   try {
-    const { userId } = auth();
+     // Authenticate user
+     const { userId } = auth(); 
+     if (!userId) {
+         return NextResponse.json(
+         { error: "Unauthorized" }, 
+         { status: 401 }
+         );
+     }
 
-    if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
-    }
-
-    const body = await request.json();
-    const parseResult = claritySchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
-
-    const { grade } = parseResult.data;
-
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
-    }
-
+    // 2. Validate parameters
     const { storeId } = params;
-
-    // Ensure the store exists
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
-
-    if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
+    if (!storeId) {
+      return NextResponse.json(
+        { error: "Store ID is required" },
+        { status: 400 }
+      );
     }
+
+    // 3. Verify store ownership (critical!)
+    const store = await prisma.store.findUnique({
+      where: {
+        id: storeId,
+        userId, // Schema shows Store ↔ User relationship
+      },
+    });
+    if (!store) {
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+    );
+    }
+
+    //Validate data and parse data
+    const body = await request.json();
+    const validatedFields = claritySchema.safeParse(body);;
+    if (!validatedFields.success) {
+      return NextResponse.json({ 
+        error: "Validation failed",
+        details: validatedFields.error.flatten().fieldErrors 
+      }, { status: 400 });
+    }
+
+    // Extract data
+    const { grade } = validatedFields.data;
 
     // Create the clarity grade
     const clarity = await prisma.clarity.create({
       data: {
         grade,
-        storeId,
+        storeId: store.id,
       },
     });
 
-    return NextResponse.json(clarity);
+    return NextResponse.json (
+    { success: true, clarity  },
+    { status: 200 }
+   );
   } catch (error) {
     console.error('[clarity_POST]', error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(request, { params }) {
   try {
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
-    }
-
-    const { storeId } = params;
-
+   // 1. Parameter validation
+   const { storeId } = params;
+   if (!storeId) {
+     return NextResponse.json(
+       { error: "Store ID are required" },
+       { status: 400 }
+     );
+   }
+ 
     const clarities = await prisma.clarity.findMany({
       where: { storeId },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(clarities);
+      // 3. Handle not found
+      if (!clarities) {
+      return NextResponse.json(
+        { error: "Clarities not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      clarities,
+      { status: 200 }
+  );
+
   } catch (error) {
     console.error('[clarity_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
+    return NextResponse.json (
+    { error: "An unexpected error occurred" },
+    { status: 500 }
+  );
+}
 }

@@ -1,10 +1,13 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 
 export async function POST(req) {
+    // 1. Authenticate user
     const { userId } = auth();
-    
     if (!userId) {
-        return new Response("Unauthorized", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" }, 
+        { status: 401 }
+      );
     }
 
     const adminUser = await clerkClient.users.getUser(userId);

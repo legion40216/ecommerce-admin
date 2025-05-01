@@ -1,6 +1,6 @@
 import React from 'react'
 import prisma from '@/lib/prismadb';
-import ColorForm from './_components/color-form';
+import ColorForm from './components/color-form';
 
 export default async function page({params}) {
   

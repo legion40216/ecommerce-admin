@@ -1,64 +1,115 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
+import { billboardSchema } from '@/lib/validators';
 
-export async function POST(request,{params}) {
+export async function POST(request, { params }) {
     try {
-        // Authenticate user
-        const { userId } = auth(); 
-        if (!userId) {
-            return new NextResponse("Unauthenticated", { status: 401 });
-        }
+      // 1. Authentication
+      const { userId } = auth();
+      if (!userId) {
+        return NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 401 });
+      }
   
-        const body = await request.json();
-        const { label, imageUrl } = body;
-        
-        // Validate data
-        if (!label || !imageUrl) {
-          return new NextResponse("Missing required fields", { status: 400 });
+      // 2. Validate parameters
+      const { storeId } = params;
+      if (!storeId) {
+        return NextResponse.json(
+          { error: "Store ID is required" },
+          { status: 400 }
+        );
+      }
+  
+      // 3. Verify store ownership (critical!)
+      const store = await prisma.store.findUnique({
+        where: {
+          id: storeId,
+          userId // Schema shows Store ↔ User relationship
         }
-
-        if(!params.storeId) {
-            return new NextResponse("Store is required", { status: 400 });
+      });
+      if (!store) {
+        return NextResponse.json(
+            { error: "Store not found" }, 
+            { status: 404 }
+        );
+      }
+  
+      // 4. Validate request body
+      const body = await request.json();
+      const validatedFields = billboardSchema.safeParse(body);
+      if (!validatedFields.success) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: validatedFields.error.flatten().fieldErrors,
+          },
+          { status: 400 }
+        );
+      }
+  
+      const { label, imageUrl } = validatedFields.data;
+      
+      const billboard = await prisma.billboard.create({
+        data: {
+          label,
+          imageUrl,
+          storeId: store.id,  // Use verified store ID
         }
-
-        const { storeId } = params;
-
-        const billboard = await prisma.billboard.create({
-            data: {
-               label,
-               imageUrl,
-               storeId,
-            }
-        });
-
-        return NextResponse.json(billboard);
-
+      });
+  
+      return NextResponse.json(
+        { success: true, billboard },
+        { status: 201 } 
+      );
+  
     } catch (error) {
-        console.error('[BILLBOARD_POST]', error);
-        return new NextResponse("Internal error", { status: 500 });
-    }
-}
+      console.error('[BILLBOARD_POST]', error);
 
-export async function GET(request,{params}) {
-    try {
-        
-        if(!params.storeId) {
-            return new NextResponse("Store is required", { status: 400 });
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
+  }
+
+export async function GET(request, { params }) {
+  try {
+    
+    // 1. Parameter validation
+    const { storeId } = params;
+    if(!storeId) {
+        return NextResponse.json(
+            { error: "Store ID are required" },
+            { status: 400 }
+          );
+    }
+
+    const billboard = await prisma.billboard.findMany({
+        where: {
+            storeId: storeId
         }
+    });
 
-        const { storeId } = params;
-
-        const billboards = await prisma.billboard.findMany({
-            where: {
-                storeId: storeId
-            }
-        });
-
-        return NextResponse.json(billboards);
-
-    } catch (error) {
-        console.error('[BILLBOARD_GET]', error);
-        return new NextResponse("Internal Error", { status: 500 });
+    // 3. Handle not found
+    if (!billboard) {
+      return NextResponse.json(
+        { error: "Billboard not found" },
+        { status: 404 }
+      );
     }
+
+    return NextResponse.json(
+      billboard, 
+      { status: 200 }
+    );
+    
+  } catch (error) {
+    console.error('[BILLBOARD_GET]', error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
 }

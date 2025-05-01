@@ -2,7 +2,7 @@ import React from 'react'
 import prisma from '@/lib/prismadb';
 
 import { format } from 'date-fns';
-import CategoriesClient from './_components/client';
+import CategoriesClient from './components/client';
 
 export default async function page({params}) {
 

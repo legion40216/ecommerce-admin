@@ -1,75 +1,109 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const lusterSchema = z.object({
-  type: z.string().min(1, { message: "Type is required" }),
-});
+import { lusterSchema } from '@/lib/validators';
 
 export async function POST(request, { params }) {
   try {
     const { userId } = auth();
-
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const body = await request.json();
-    const parseResult = lusterSchema.safeParse(body);
+       // 2. Validate parameters
+       const { storeId } = params;
+       if (!storeId) {
+         return NextResponse.json(
+           { error: "Store ID is required" },
+           { status: 400 }
+         );
+       }
+   
+       // 3. Verify store ownership (critical!)
+       const store = await prisma.store.findUnique({
+         where: {
+           id: storeId,
+           userId, // Schema shows Store ↔ User relationship
+         },
+       });
+       if (!store) {
+         return NextResponse.json(
+           { error: "Store not found" }, 
+           { status: 404 }
+       );
+       }
 
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
+   //Validate data and parse data
+     const body = await request.json();
+     const validatedFields = lusterSchema.safeParse(body);;
+     if (!validatedFields.success) {
+       return NextResponse.json({ 
+         error: "Validation failed",
+         details: validatedFields.error.flatten().fieldErrors 
+       }, { status: 400 });
+     }
+    // Extract data
+    const { type } = validatedFields.data;
 
-    const { type } = parseResult.data;
-
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
-    }
-
-    const { storeId } = params;
-
-    // Ensure the store exists and belongs to the user
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
-
-    if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
-    }
-
-    // Create the luster
     const luster = await prisma.luster.create({
       data: {
         type,
-        storeId,
+        storeId: store.id,
       },
     });
 
-    return NextResponse.json(luster);
+    return NextResponse.json (
+      { success: true, luster },
+      { status: 200 }
+     );
   } catch (error) {
     console.error('[luster_POST]', error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(request, { params }) {
   try {
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
-    }
 
+    // Extract and validate storeId
     const { storeId } = params;
+    if(!storeId) {
+        return NextResponse.json(
+            { error: "Store is required" },
+            { status: 400 }
+        );
+    }
 
     const lusters = await prisma.luster.findMany({
       where: { storeId },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(lusters);
+    // 3. Handle not found
+    if (!lusters) {
+    return NextResponse.json(
+      { error: "Lusters not found" },
+      { status: 404 }
+    );
+  }
+
+    return NextResponse.json(
+      lusters ,
+      { status: 200 }
+  );
   } catch (error) {
     console.error('[luster_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json (
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
+
+

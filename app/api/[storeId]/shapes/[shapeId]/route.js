@@ -1,123 +1,184 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const shapeSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
-});
-
-export async function GET(request, { params }) {
-  try {
-    if (!params.storeId || !params.shapeId) {
-      return new NextResponse("Store and Shape IDs are required", { status: 400 });
-    }
-
-    const { storeId, shapeId } = params;
-
-    const shape = await prisma.shape.findFirst({
-      where: {
-        id: shapeId,
-        storeId,
-      },
-    });
-
-    if (!shape) {
-      return new NextResponse("Shape not found", { status: 404 });
-    }
-
-    return NextResponse.json(shape);
-  } catch (error) {
-    console.error('[shape_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
-}
+import { Prisma } from '@prisma/client';
+import { shapeSchema } from '@/lib/validators';
 
 export async function PATCH(request, { params }) {
   try {
-    const { userId } = auth();
-
-    if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
-    }
-
-    if (!params.storeId || !params.shapeId) {
-      return new NextResponse("Store and Shape IDs are required", { status: 400 });
-    }
-
-    const body = await request.json();
-    const parseResult = shapeSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
-
-    const { name } = parseResult.data;
-    const { storeId, shapeId } = params;
-
-    // Ensure the store exists and belongs to the user
+      // Authenticate user
+      const { userId } = auth(); 
+      if (!userId) {
+          return NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 401 }
+          );
+      }
+ 
+      const { storeId, shapeId } = params;
+      if (!storeId || !shapeId) {
+        return NextResponse.json(
+          { error: "Store and Shape IDs are required" },
+          { status: 400 }
+        );
+      }
+ 
+    // 3. Verify store ownership
     const store = await prisma.store.findUnique({
-      where: { id: storeId },
+      where: {
+        id: storeId,
+        userId,
+      },
     });
-
     if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+      );
     }
 
-    // Update the shape
+    // Validate body
+    const body = await request.json();
+    const validation = shapeSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validation.error.flatten().fieldErrors
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { name } = validation.data;
+
     const shape = await prisma.shape.updateMany({
-      where: {
-        id: shapeId,
-        storeId,
+      where: { 
+        id: shapeId, 
+        storeId: store.id 
       },
-      data: { name },
+      data: { 
+        name 
+      },
     });
 
     if (shape.count === 0) {
-      return new NextResponse("Shape not found or not authorized", { status: 404 });
+      return NextResponse.json(
+        { error: "Shape not found or not authorized" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(shape);
+    return NextResponse.json(
+      { success: true, shape },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('[shape_PATCH]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
     const { userId } = auth();
-
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
-    }
-
-    if (!params.storeId || !params.shapeId) {
-      return new NextResponse("Store and Shape IDs are required", { status: 400 });
+      return NextResponse.json(
+        { error: "Unauthenticated" },
+        { status: 401 }
+      );
     }
 
     const { storeId, shapeId } = params;
+    if (!storeId || !shapeId) {
+      return NextResponse.json(
+        { error: "Store and Shape IDs are required" },
+        { status: 400 }
+      );
+    }
 
-    // Ensure the shape belongs to the store
-    const shape = await prisma.shape.findFirst({
-      where: {
+  // 3. Verify store ownership
+  const store = await prisma.store.findUnique({
+    where: {
+      id: storeId,
+      userId,
+    },
+  });
+  if (!store) {
+    return NextResponse.json(
+      { error: "Store not found" }, 
+      { status: 404 }
+  );
+  }
+
+    const shape =await prisma.shape.delete({
+      where: { 
         id: shapeId,
-        storeId,
-      },
+        storeId: store.id
+
+       },
+    });
+
+    return NextResponse.json(
+      { success: true, shape },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[shape_DELETE]', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === 'P2003') { // Foreign key constraint failed
+            return NextResponse.json(
+              { error: "Please delete all products linked to this shape first." },
+              { status: 400 }
+            );
+          }
+          if (error.code === 'P2025') {
+            return NextResponse.json(
+              { error: "Shape not found within this store." },
+              { status: 404 }
+            );
+          }
+        }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request, { params }) {
+  try {
+    const { storeId, shapeId } = params;
+    if (!storeId || !shapeId) {
+      return NextResponse.json(
+        { error: "Store and Shape IDs are required" },
+        { status: 400 }
+      );
+    }
+
+    const shape = await prisma.shape.findFirst({
+      where: { id: shapeId, storeId },
     });
 
     if (!shape) {
-      return new NextResponse("Shape not found", { status: 404 });
+      return NextResponse.json(
+        { error: "Shape not found" },
+        { status: 404 }
+      );
     }
 
-    // Delete the shape
-    await prisma.shape.delete({
-      where: { id: shapeId },
-    });
-
-    return NextResponse.json({ message: "Shape deleted successfully" });
+    return NextResponse.json(
+      shape ,
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('[shape_DELETE]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[shape_GET]', error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }

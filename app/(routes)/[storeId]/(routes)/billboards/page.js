@@ -1,7 +1,7 @@
 import React from 'react'
 import prisma from '@/lib/prismadb';
 
-import BillboardClient from './_components/client';
+import BillboardClient from './components/client';
 import { format } from 'date-fns';
 
 export default async function page({params}) {

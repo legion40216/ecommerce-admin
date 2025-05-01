@@ -1,6 +1,6 @@
 import React from 'react';
 import prisma from '@/lib/prismadb';
-import LusterClient from './_components/client';
+import LusterClient from './components/client';
 import { format } from 'date-fns';
 
 export default async function Page({ params }) {

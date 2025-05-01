@@ -2,8 +2,8 @@ import React from 'react'
 import prisma from '@/lib/prismadb';
 
 import { format } from 'date-fns';
-import SizeClient from './_components/client';
-import ColorClient from './_components/client';
+import SizeClient from './components/client';
+import ColorClient from './components/client';
 
 export default async function page({params}) {
 

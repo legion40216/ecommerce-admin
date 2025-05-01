@@ -1,45 +1,54 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const cutSchema = z.object({
-  grade: z.string().min(1, { message: "Grade is required" }),
-});
+import { cutSchema } from '@/lib/validators';
 
 export async function POST(request, { params }) {
   try {
     const { userId } = auth();
-
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const body = await request.json();
-    const parseResult = cutSchema.safeParse(body);
+       // 2. Validate parameters
+       const { storeId } = params;
+       if (!storeId) {
+         return NextResponse.json(
+           { error: "Store ID is required" },
+           { status: 400 }
+         );
+       }
+   
+       // 3. Verify store ownership (critical!)
+       const store = await prisma.store.findUnique({
+         where: {
+           id: storeId,
+           userId, // Schema shows Store ↔ User relationship
+         },
+       });
+       if (!store) {
+         return NextResponse.json(
+           { error: "Store not found" }, 
+           { status: 404 }
+       );
+       }
 
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
+   //Validate data and parse data
+     const body = await request.json();
+     const validatedFields = cutSchema.safeParse(body);;
+     if (!validatedFields.success) {
+       return NextResponse.json({ 
+         error: "Validation failed",
+         details: validatedFields.error.flatten().fieldErrors 
+       }, { status: 400 });
+     }
+ 
+     // Extract data
+     const { grade } = validatedFields.data;
 
-    const { grade } = parseResult.data;
-
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
-    }
-
-    const { storeId } = params;
-
-    // Ensure the store exists
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
-
-    if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
-    }
-
-    // Create the cut grade
     const cut = await prisma.cut.create({
       data: {
         grade,
@@ -47,29 +56,54 @@ export async function POST(request, { params }) {
       },
     });
 
-    return NextResponse.json(cut);
+    return NextResponse.json(
+      { success: true, cut },
+      { status: 200 }
+    );
+
   } catch (error) {
     console.error('[cut_POST]', error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(request, { params }) {
   try {
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
+    // Extract and validate storeId
+    const { storeId } = params;
+    if (!storeId) {
+      return NextResponse.json(
+        { error: "Store is required" }, 
+        { status: 400 }
+      );
     }
 
-    const { storeId } = params;
-
     const cuts = await prisma.cut.findMany({
-      where: { storeId },
-      orderBy: { createdAt: 'desc' },
+      where: {
+        storeId: storeId
+    }
     });
 
-    return NextResponse.json(cuts);
+    // 3. Handle not found
+      if (!cuts) {
+        return NextResponse.json(
+          { error: "Cut not found" },
+          { status: 404 }
+        );
+      }
+
+    return NextResponse.json(
+      cuts , 
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('[cut_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("[cut_GET]", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }

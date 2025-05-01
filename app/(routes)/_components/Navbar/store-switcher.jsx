@@ -30,7 +30,7 @@ import {
   StoreIcon 
 } from 'lucide-react';
 
-import StoreForm from '../store-form';
+import StoreForm from '../client/store-form';
 import Modal from '@/components/modals/modal';
 import { Button } from '@/components/ui/button';
 

@@ -1,13 +1,40 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prismadb";
+import { Prisma } from '@prisma/client';
 
 export async function PATCH(request, { params }) {
   try {
-    const { userId } = auth();
-
+    // Authenticate user
+    const { userId } = auth(); 
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+        return NextResponse.json(
+        { error: "Unauthorized" }, 
+        { status: 401 }
+        );
+    }
+
+    // Extract and validate storeId 
+    const { storeId, orderId } = params;
+    if(!storeId || !orderId) {
+        return NextResponse.json(
+            { error: "Store ID and Order ID is required" },
+            { status: 400 }
+        );
+    }
+    
+    // 3. Verify store ownership
+    const store = await prisma.store.findUnique({
+      where: {
+        id: storeId,
+        userId,
+      },
+    });
+    if (!store) {
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+      );
     }
 
     const body = await request.json();
@@ -15,89 +42,131 @@ export async function PATCH(request, { params }) {
     const { isPaid } = body;
 
     if (typeof isPaid !== 'boolean') {
-      return new NextResponse("Invalid isPaid value", { status: 400 });
+      return new NextResponse(
+        "Invalid isPaid value", 
+        { status: 400 }
+      );
     }
-
-    if (!params.orderId) {
-      return new NextResponse("Order ID is required", { status: 400 });
-    }
-
-    const { orderId } = params;
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
     });
 
     if (!order) {
-      return new NextResponse("Order not found", { status: 404 });
+      return NextResponse.json (
+        { error: "Order not found" },
+        { status: 404 }
+     )
     }
 
     if (order.paymentMethod !== 'cod') {
-      return new NextResponse("Only COD orders can be manually updated", { status: 400 });
+      return new NextResponse(
+        { error: "Order not found" },
+        { status: 404 }
+      );
     }
 
     const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
+      where: { 
+        id: orderId,
+        storeId: store.id
+
+       },
       data: { isPaid },
     });
 
-    return NextResponse.json(updatedOrder);
+    return NextResponse.json(
+      { success: true, updatedOrder },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('[order_PATCH]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    // Handle not found error
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: "Billboard not found" },
+          { status: 404 }
+        );
+      }
+    }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
+    // Authenticate user
     const { userId } = auth();
-
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    if (!params.orderId) {
-      return new NextResponse("Order ID is required", { status: 400 });
+    // Extract and validate parameters
+    const { orderId, storeId } = params;
+    if (!orderId) {
+      return NextResponse.json(
+        { error: "Order ID is required" },
+        { status: 400 }
+      );
+    } if (!storeId) {
+      return NextResponse.json(
+        { error: "Store ID is required" },
+        { status: 400 }
+      );
     }
 
-    const store = await prisma.store.findFirst({
+    // 3. Verify store ownership
+    const store = await prisma.store.findUnique({
       where: {
-        id: params.storeId,
+        id: storeId,
         userId,
-      }
+      },
     });
-
     if (!store) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+      );
     }
 
-    const order = await prisma.order.findUnique({
-      where: {
-        id: params.orderId,
-      },
-    });
-
-    if (!order) {
-      return new NextResponse("Order not found", { status: 404 });
-    }
-
-    // Delete associated orderItems first
+    // Delete associated order items first
     await prisma.orderItem.deleteMany({
-      where: {
-        orderId: params.orderId,
-      },
+      where: { orderId },
     });
 
     // Then delete the order
-    await prisma.order.delete({
-      where: {
-        id: params.orderId,
-      },
+    const order = await prisma.order.delete({
+      where: { id: orderId },
     });
 
-    return NextResponse.json({ message: "Order deleted successfully" });
+    return NextResponse.json(
+      { success: true, 
+        message: "Order deleted successfully", 
+        order
+      },
+      { status: 200 }
+    );
+
   } catch (error) {
     console.error('[ORDER_DELETE]', error);
-    return new NextResponse("Internal error", { status: 500 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: "Billboard not found" },
+          { status: 404 }
+        );
+      }
+    }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }

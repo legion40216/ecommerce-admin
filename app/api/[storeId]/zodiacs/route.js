@@ -6,10 +6,16 @@ export async function GET(request,{params}) {
     
         const zodiacs = await prisma.zodiac.findMany({});
 
-        return NextResponse.json(zodiacs);
+        return NextResponse.json(
+            zodiacs,
+            { status: 200 }
+          );
 
     } catch (error) {
         console.error('[zodiacs_GET]', error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json(
+            { error: "An unexpected error occurred" },
+            { status: 500 }
+          );
     }
 }

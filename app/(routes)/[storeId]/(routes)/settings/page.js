@@ -3,7 +3,7 @@ import React from 'react'
 import prisma from '@/lib/prismadb';
 import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server';
-import SettingForm from './_components/setting-form';
+import SettingForm from './components/setting-form';
 
 export default async function page({params}) {
   const {userId} = auth()

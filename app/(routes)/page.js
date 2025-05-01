@@ -3,7 +3,7 @@ import prisma from '@/lib/prismadb';
 import { redirect } from 'next/navigation';
 
 import React from 'react'
-import DashboardClient from './_components/dashboard-client'
+import Client from './_components/client';
 
 export default async function page() {
   const {userId} = auth()
@@ -20,7 +20,7 @@ export default async function page() {
   
   return (
     <div>
-      <DashboardClient/>
+      <Client />
     </div>
   )
 }

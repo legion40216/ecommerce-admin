@@ -1,75 +1,104 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const shapeSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
-});
+import { shapeSchema } from '@/lib/validators';
 
 export async function POST(request, { params }) {
   try {
+    // Authenticate
     const { userId } = auth();
-
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const body = await request.json();
-    const parseResult = shapeSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
-
-    const { name } = parseResult.data;
-
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
-    }
-
+    // 2. Validate parameters
     const { storeId } = params;
-
-    // Ensure the store exists and belongs to the user
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
-
-    if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
+    if (!storeId) {
+      return NextResponse.json(
+        { error: "Store ID is required" },
+        { status: 400 }
+      );
     }
 
-    // Create the shape
-    const shape = await prisma.shape.create({
-      data: {
-        name,
-        storeId,
+    // 3. Verify store ownership (critical!)
+    const store = await prisma.store.findUnique({
+      where: {
+        id: storeId,
+        userId, 
       },
     });
+    if (!store) {
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+    );
+    }
 
-    return NextResponse.json(shape);
+    // Validate body
+    const body = await request.json();
+    const validation = shapeSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validation.error.flatten().fieldErrors
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { name } = validation.data;
+
+    // Create shape
+    const shape = await prisma.shape.create({
+      data: { 
+        name,
+        storeId: store.id
+      }
+    });
+
+    return NextResponse.json(
+      { success: true, shape },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('[shape_POST]', error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(request, { params }) {
   try {
-    if (!params.storeId) {
-      return new NextResponse("Store is required", { status: 400 });
+    // Validate storeId
+    const { storeId } = params;
+    if (!storeId) {
+      return NextResponse.json(
+        { error: "Store is required" },
+        { status: 400 }
+      );
     }
 
-    const { storeId } = params;
-
+    // Fetch
     const shapes = await prisma.shape.findMany({
       where: { storeId },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(shapes);
+    return NextResponse.json(
+      shapes,
+      { status: 200 }
+    );
   } catch (error) {
     console.error('[shape_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }

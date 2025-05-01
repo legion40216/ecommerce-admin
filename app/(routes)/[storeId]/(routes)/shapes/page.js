@@ -1,7 +1,7 @@
 import React from 'react';
 import prisma from '@/lib/prismadb';
 import { format } from 'date-fns';
-import ShapeClient from './_components/client'; // Update the import to ShapeClient
+import ShapeClient from './components/client'; // Update the import to ShapeClient
 
 export default async function Page({ params }) {
   // Fetch shapes instead of sizes

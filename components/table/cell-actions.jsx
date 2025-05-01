@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
-import ConfirmModal from "@/components/modals/confirm-modal";
+
 import { 
     Copy,
     Edit, 
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import ConfirmModal from "@/components/modals/confirm-modal";
 
 export default function CellActions({ 
   dataId,
@@ -42,12 +43,10 @@ export default function CellActions({
       await axios.delete(`/api/${params.storeId}/${paramsName}/${dataId}`);
       toast.success(`${toastName.toUpperCase()} deleted`);
       router.refresh();
-    } catch (error) {
-      if (error.response && error.response.data) {
-        toast.error(error.response.data);
-      } else {
-        toast.error("Server Error: Unable to process the request");
-      }
+    } 
+    catch (error) {
+      console.log(error)
+      toast.error(error.response?.data?.error || "Something went wrong!");
     } finally {
       toast.dismiss(toastId); 
       setOpen(false);

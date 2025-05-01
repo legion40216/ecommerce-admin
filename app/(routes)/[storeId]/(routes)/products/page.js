@@ -2,7 +2,7 @@ import React from 'react';
 import prisma from '@/lib/prismadb';
 import { format } from 'date-fns';
 import { formatter } from '@/lib/utils';
-import ProductClient from './_components/client';
+import ProductClient from './components/client';
 
 export default async function page({ params }) {
   const products = await prisma.product.findMany({

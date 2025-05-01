@@ -1,19 +1,22 @@
 import React from 'react'
-import { Separator } from '@/components/ui/separator';
+
+import { CreditCard, DollarSign, Package } from 'lucide-react';
 import { formatter } from '@/lib/utils';
-import Headings from '@/components/custom-ui/headings';
+
+import { getTotalRevenue } from '@/app/actions/get-total-revenue';
+import { getSalesCount } from '@/app/actions/get-sales-count';
+import { getStockCount } from '@/app/actions/get-stock-count';
+import { getRevenueData } from '@/app/actions/get-revenue-data';
+
 import { 
     Card, 
     CardContent, 
     CardHeader, 
     CardTitle 
-} 
-    from '@/components/ui/card';
-import { CreditCard, DollarSign, Package } from 'lucide-react';
-import { getTotalRevenue } from '@/app/actions/get-total-revenue';
-import { getSalesCount } from '@/app/actions/get-sales-count';
-import { getStockCount } from '@/app/actions/get-stock-count';
-import { getRevenueData } from '@/app/actions/get-revenue-data';
+} from "@/components/ui/card";
+
+import Headings from '@/components/custom-ui/headings';
+import { Separator } from '@/components/ui/separator';
 import Overview from './components/overview';
 
 export default async function page({params}) {

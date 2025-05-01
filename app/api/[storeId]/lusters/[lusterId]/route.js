@@ -1,104 +1,174 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { Prisma } from '@prisma/client';
+import { lusterSchema } from '@/lib/validators';
 
-const lusterSchema = z.object({
-  type: z.string().min(1, { message: "Type is required" }),
-});
-
-export async function GET(request, { params }) {
+export async function PATCH(request, { params }) { 
+  
   try {
-    if (!params.storeId || !params.lusterId) {
-      return new NextResponse("Store and Luster IDs are required", { status: 400 });
-    }
-
-    const { storeId, lusterId } = params;
-
-    const luster = await prisma.luster.findFirst({
+      // Authenticate user
+      const { userId } = auth(); 
+      if (!userId) {
+          return NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 401 }
+          );
+      }
+ 
+      // 2. Extract and validate parameters
+      const { storeId, lusterId } = params;
+      if (!storeId || !lusterId) {
+        return NextResponse.json(
+          { error: "Store ID and Luster ID are required" },
+          { status: 400 }
+        );
+      }
+ 
+    // 3. Verify store ownership
+    const store = await prisma.store.findUnique({
       where: {
-        id: lusterId,
-        storeId,
+        id: storeId,
+        userId,
       },
     });
-
-    if (!luster) {
-      return new NextResponse("Luster not found", { status: 404 });
-    }
-
-    return NextResponse.json(luster);
-  } catch (error) {
-    console.error('[luster_GET]', error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
-}
-
-export async function PATCH(request, { params }) {
-  try {
-    const { userId } = auth();
-
-    if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
-    }
-
-    if (!params.storeId || !params.lusterId) {
-      return new NextResponse("Store and Luster IDs are required", { status: 400 });
-    }
-
-    const body = await request.json();
-    const parseResult = lusterSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return new NextResponse(parseResult.error.errors[0].message, { status: 400 });
-    }
-
-    const { type } = parseResult.data;
-    const { storeId, lusterId } = params;
-
-    // Ensure the store exists and belongs to the user
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
-
     if (!store) {
-      return new NextResponse("Store not found", { status: 404 });
+      return NextResponse.json(
+        { error: "Store not found" }, 
+        { status: 404 }
+      );
     }
-
-    // Update the luster
-    const updatedLuster = await prisma.luster.updateMany({
+ 
+     //Validate data and parse data
+     const body = await request.json();
+     const validatedFields = lusterSchema.safeParse(body);;
+     if (!validatedFields.success) {
+       return NextResponse.json({ 
+         error: "Validation failed",
+         details: validatedFields.error.flatten().fieldErrors 
+       }, { status: 400 });
+     }
+ 
+    // Extract data
+    const { type } = validatedFields.data;
+ 
+    const luster = await prisma.luster.update({
       where: {
         id: lusterId,
-        storeId,
+        storeId: store.id,
       },
       data: { type },
     });
 
-    if (updatedLuster.count === 0) {
-      return new NextResponse("Luster not found or not authorized", { status: 404 });
-    }
-
-    return NextResponse.json(updatedLuster);
+    return NextResponse.json(
+      { success: true, luster },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('[luster_PATCH]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+      // Handle not found error
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          return NextResponse.json(
+            { error: "Cut not found" },
+            { status: 404 }
+          );
+        }
+      }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request, { params }) {
+
+export async function DELETE(request, { params }) {  
+
   try {
+    // Authenticate user
     const { userId } = auth();
-
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" }, 
+        { status: 401 }
+      );
     }
 
-    if (!params.storeId || !params.lusterId) {
-      return new NextResponse("Store and Luster IDs are required", { status: 400 });
-    }
-
+    // 2. Parameter validation
     const { storeId, lusterId } = params;
+    if (!storeId || !lusterId) {
+      return NextResponse.json(
+        { error: "Store ID and Luster ID are required" },
+        { status: 400 }
+      );
+    }
 
-    // Ensure the luster belongs to the store
+   // 3. Verify store ownership
+   const store = await prisma.store.findUnique({
+    where: {
+      id: storeId,
+      userId,
+    },
+  });
+  if (!store) {
+    return NextResponse.json(
+      { error: "Store not found" }, 
+      { status: 404 }
+  );
+  }
+
+    // Delete the luster
+    const luster = await prisma.luster.delete({
+      where: { 
+        id: lusterId,
+        storeId: store.id 
+       },
+    });
+
+    return NextResponse.json(
+      { success: true, luster },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error('[luster_DELETE]', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: "Luster not found within this store." },
+          { status: 404 }
+        );
+      }
+    }
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request, { params }) {
+
+try {
+    // Extract and validate lusterId 
+    const { lusterId } = params;
+      if(!lusterId) {
+        return NextResponse.json(
+            { error: "Luster is required" },
+            { status: 400 }
+        );
+    }
+
+    // Extract and validate storeId 
+    const { storeId } = params;
+    if(!storeId) {
+        return NextResponse.json(
+            { error: "Store is required" },
+            { status: 400 }
+        );
+    }
+
     const luster = await prisma.luster.findFirst({
       where: {
         id: lusterId,
@@ -107,17 +177,25 @@ export async function DELETE(request, { params }) {
     });
 
     if (!luster) {
-      return new NextResponse("Luster not found", { status: 404 });
+      return NextResponse.json (
+      { error: "luster not found" },
+      { status: 404 }
+      )
     }
 
-    // Delete the luster
-    await prisma.luster.delete({
-      where: { id: lusterId },
-    });
+    return NextResponse.json(
+      luster ,
+      { status: 200 }
+  );
 
-    return NextResponse.json({ message: "Luster deleted successfully" });
   } catch (error) {
-    console.error('[luster_DELETE]', error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[luster_GET]', error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
   }
 }
+
+
+

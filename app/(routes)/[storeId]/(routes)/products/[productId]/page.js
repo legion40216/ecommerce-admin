@@ -2,7 +2,7 @@
 
 import React from 'react';
 import prisma from '@/lib/prismadb';
-import ProductForm from './_components/product-form';
+import ProductForm from './components/product-form';
 
 export default async function Page({ params }) {
   const { productId, storeId } = params;
@@ -73,7 +73,7 @@ export default async function Page({ params }) {
         price: product.price.toNumber(),
       }
     : null;
-      console.log(formattedProduct)
+
   return (
     <div>
       <ProductForm
